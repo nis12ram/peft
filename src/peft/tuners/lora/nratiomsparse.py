@@ -29,7 +29,7 @@ from .config import LoraConfig
 from .layer import LoraLayer, Linear
 
 
-class NratioMSparseLoraLinear(nn.modules, LoraLayer):
+class NratioMSparseLoraLinear(nn.Module, LoraLayer):
     def __init__(
         self,
         base_layer,
