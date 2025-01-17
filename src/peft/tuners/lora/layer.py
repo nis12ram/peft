@@ -101,7 +101,7 @@ class LoraLayer(BaseTunerLayer):
             in_features, out_features = base_layer.in_features, base_layer.out_features
         elif hasattr(base_layer, "logits") and base_layer.__class__.__name__ == "NratioMSparseLinear":
             # NratioMSparseLinear layres
-            in_features, out_features = base_layer.all_N_selections_from_M_parameters, base_layer.num_parameter_block
+            in_features, out_features = base_layer.all_N_selections_from_M_parameters, base_layer.num_parameter_blocks
         else:
             # possibly support user provided custom layer types using dynamic dispatch
             if hasattr(base_layer, "in_features") and hasattr(base_layer, "out_features"):
