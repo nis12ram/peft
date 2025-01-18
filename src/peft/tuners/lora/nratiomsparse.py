@@ -191,15 +191,23 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
             for active_adapter in self.active_adapters:
                 if active_adapter not in self.lora_A.keys():
                     continue
+                lora_A = self.lora_A[active_adapter]
+                lora_B = self.lora_B[active_adapter]
+                dropout = self.lora_dropout[active_adapter]
+                scaling = self.scaling[active_adapter]
+                x = x.to(lora_A.weight.dtype)
                 if not self.use_dora[active_adapter]:
-                    device, dtype = self.base_layer.device, self.base_layer.dtype
-                    logits = self.base_layer.logits
-                    delta_logits = self.get_delta_weight(active_adapter).to(
-                        device=device, dtype=dtype
-                    )  ## lora_A and lora_B can have a different dtype than the  parameters of base_layer(NratioMsparseLinear)
-                    logits.data += delta_logits  ## temporarily adding delta logits to original logits
-                    result = result + self.base_layer(x, *args, **kwargs)
-                    logits.data -= delta_logits  ## removing delta logits from new logits(logits + delta_logits)
+                    # device, dtype = self.base_layer.device, self.base_layer.dtype
+                    # logits = self.base_layer.logits
+                    # delta_logits = self.get_delta_weight(active_adapter).to(
+                    #     device=device, dtype=dtype
+                    # )  ## lora_A and lora_B can have a different dtype than the  parameters of base_layer(NratioMsparseLinear)
+                    # logits.data += delta_logits  ## temporarily adding delta logits to original logits
+                    # result = result + self.base_layer(x, *args, **kwargs)
+                    # logits.data -= delta_logits  ## removing delta logits from new logits(logits + delta_logits)
+
+                    
+                    result = result + lora_B(lora_A(dropout(x))) * scaling
                 else:
                     raise NotImplementedError(f"{self.__class__.__name__} does not support dora yet, set it to False")
 
