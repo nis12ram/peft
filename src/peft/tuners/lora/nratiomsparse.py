@@ -67,6 +67,9 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
             lora_bias=lora_bias,
         )
 
+
+        self.test_x = torch.randn(6)
+
     def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
         """
         Merge the active adapter weights into the base weights
@@ -191,18 +194,22 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
             for active_adapter in self.active_adapters:
                 if active_adapter not in self.lora_A.keys():
                     continue
-                # do(lora_A.weight.dtype)
+                lora_A = self.lora_A[active_adapter]
+                lora_B = self.lora_B[active_adapter]
+                dropout = self.lora_dropout[active_adapter]
+                scaling = self.scaling[active_adapter]
                 if not self.use_dora[active_adapter]:
                     device, dtype = self.base_layer.device, self.base_layer.dtype
-                    logits: torch.Tensor = self.base_layer.diff_mask.logits
-                    delta_logits = self.get_delta_weight(active_adapter).to(
-                        dtype
-                    )  ## lora_A and lora_B can have a different dtype than the  parameters of base_layer(NratioMsparseLinear)
-                    logits.data += delta_logits  ## temporarily adding delta logits to original logits
-                    result = result + self.base_layer(x, *args, **kwargs)
-                    logits.data -= delta_logits  ## removing delta logits from new logits(logits + delta_logits)
+                    # logits: torch.Tensor = self.base_layer.diff_mask.logits
+                    # delta_logits = self.get_delta_weight(active_adapter).to(
+                    #     dtype
+                    # )  ## lora_A and lora_B can have a different dtype than the  parameters of base_layer(NratioMsparseLinear)
+                    # logits.data += delta_logits  ## temporarily adding delta logits to original logits
+                    # result = result + self.base_layer(x, *args, **kwargs)
+                    # logits.data -= delta_logits  ## removing delta logits from new logits(logits + delta_logits)
 
-                    # result = result
+                    self.test_x = self.test_x.to(dtype)
+                    result = result + lora_B(lora_A(dropout(self.test_x))) * scaling
                 else:
                     raise NotImplementedError(f"{self.__class__.__name__} does not support dora yet, set it to False")
 
