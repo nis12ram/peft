@@ -99,7 +99,7 @@ class LoraLayer(BaseTunerLayer):
         elif hasattr(base_layer, "W_q") and base_layer.__class__.__name__ == "HQQLinear":
             # HQQ layers
             in_features, out_features = base_layer.in_features, base_layer.out_features
-        elif hasattr(base_layer, "logits") and base_layer.__class__.__name__ == "NratioMSparseLinear":
+        elif base_layer.__class__.__name__ == "NratioMSparseLinear":
             # NratioMSparseLinear layres
             in_features, out_features = base_layer.all_N_selections_from_M_parameters, base_layer.num_parameter_blocks
         else:
