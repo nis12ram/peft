@@ -194,16 +194,15 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
                 # do(lora_A.weight.dtype)
                 if not self.use_dora[active_adapter]:
                     device, dtype = self.base_layer.device, self.base_layer.dtype
-                    logits = self.base_layer.logits
+                    logits: torch.Tensor = self.base_layer.diff_mask.logits
                     delta_logits = self.get_delta_weight(active_adapter).to(
-                        device=device, dtype=dtype
+                        dtype
                     )  ## lora_A and lora_B can have a different dtype than the  parameters of base_layer(NratioMsparseLinear)
                     logits.data += delta_logits  ## temporarily adding delta logits to original logits
                     result = result + self.base_layer(x, *args, **kwargs)
                     logits.data -= delta_logits  ## removing delta logits from new logits(logits + delta_logits)
 
-                    
-                    # result = result 
+                    # result = result
                 else:
                     raise NotImplementedError(f"{self.__class__.__name__} does not support dora yet, set it to False")
 
