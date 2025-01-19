@@ -208,7 +208,7 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
                     # result = result + self.base_layer(x, *args, **kwargs)
                     # logits.data -= delta_logits  ## removing delta logits from new logits(logits + delta_logits)
 
-                    self.test_x = self.test_x.to(dtype)
+                    self.test_x = self.test_x.to(dtype = dtype, device = device)
                     result = result + lora_B(lora_A(dropout(self.test_x))) * scaling
                 else:
                     raise NotImplementedError(f"{self.__class__.__name__} does not support dora yet, set it to False")
