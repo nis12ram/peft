@@ -225,7 +225,7 @@ def dispatch_nratiomsparse(
     else:
         target_base_layer = target
 
-    if hasattr(target_base_layer, "logits") and target_base_layer.__class__.__name__ == "NratioMSparseLinear":
+    if target_base_layer.__class__.__name__ == "NratioMSparseLinear":
         if kwargs["fan_in_fan_out"]:
             warnings.warn(
                 "fan_in_fan_out is set to True but the target module is `NratioMSparseLinear`. "
