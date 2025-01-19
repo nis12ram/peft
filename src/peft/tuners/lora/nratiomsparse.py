@@ -208,8 +208,11 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
                     # result = result + self.base_layer(x, *args, **kwargs)
                     # logits.data -= delta_logits  ## removing delta logits from new logits(logits + delta_logits)
 
-                    self.test_x = self.test_x.to(dtype = dtype, device = device)
-                    result = result + lora_B(lora_A(dropout(self.test_x))) * scaling
+                    self.test_x: torch.Tensor = self.test_x.to(dtype = dtype, device = device)
+                    res = lora_B(lora_A(dropout(self.test_x))) * scaling
+                    res = res.view(896,-1)
+                    res = res[:,0].squeeze()
+                    result = result + res
                 else:
                     raise NotImplementedError(f"{self.__class__.__name__} does not support dora yet, set it to False")
 
