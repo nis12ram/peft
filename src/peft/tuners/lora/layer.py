@@ -705,6 +705,7 @@ class Linear(nn.Module, LoraLayer):
                 dropout = self.lora_dropout[active_adapter]
                 scaling = self.scaling[active_adapter]
                 x = x.to(lora_A.weight.dtype)
+                print("lora_A.weight.dtype: ", lora_A.weight.dtype)
 
                 if not self.use_dora[active_adapter]:
                     result = result + lora_B(lora_A(dropout(x))) * scaling
