@@ -224,9 +224,9 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
                     hard = self.base_layer.diff_mask.hard
 
                     base_masks = self.base_layer.diff_mask(lora_flag=True)  ## (weight_size.numel()//4, 4)
-                    lora_masks = lora_B(lora_A(dropout(S))) * scaling  ## (weight_size.numel()//4, 4)
+                    lora_masks = (lora_B(lora_A(dropout(S.t()))) * scaling).t()  ## (weight_size.numel()//4, 4)
                     ## it is important to convert lora_masks to the same dtype and device as base_masks
-                    lora_masks = lora_masks.to(dtype=base_masks.dtype, device=base_masks.device) 
+                    lora_masks = lora_masks.to(dtype=base_masks.dtype, device=base_masks.device)
                     masks = base_masks + lora_masks  ## (weight_size.numel()//4, 4)
                     masks = masks.view(base_layer_weight_size)  ## (weight_size[0], weight_size[1])
                     k_times_masks = masks * k  ## (weight_size[0], weight_size[1])
