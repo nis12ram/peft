@@ -67,7 +67,6 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
             lora_bias=lora_bias,
         )
 
-
         self.test_x = torch.randn(6)
 
     def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
@@ -189,8 +188,8 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
         elif self.merged:
             result = self.base_layer(x, *args, **kwargs)
         else:
-            result = self.base_layer(x, *args, **kwargs)
-            torch_result_dtype = result.dtype
+            # result = self.base_layer(x, *args, **kwargs)
+            # torch_result_dtype = result.dtype
             for active_adapter in self.active_adapters:
                 if active_adapter not in self.lora_A.keys():
                     continue
@@ -199,7 +198,8 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
                 dropout = self.lora_dropout[active_adapter]
                 scaling = self.scaling[active_adapter]
                 if not self.use_dora[active_adapter]:
-                    device, dtype = self.base_layer.device, self.base_layer.dtype
+                    ## base solution case
+                    # device, dtype = self.base_layer.device, self.base_layer.dtype
                     # logits: torch.Tensor = self.base_layer.diff_mask.logits
                     # delta_logits = self.get_delta_weight(active_adapter).to(
                     #     dtype
@@ -208,15 +208,37 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
                     # result = result + self.base_layer(x, *args, **kwargs)
                     # logits.data -= delta_logits  ## removing delta logits from new logits(logits + delta_logits)
 
-                    self.test_x: torch.Tensor = self.test_x.to(dtype = dtype, device = device)
-                    res = lora_B(lora_A(dropout(self.test_x))) * scaling
-                    res = res.view(896,-1)
-                    res = res[:,0].squeeze()
-                    result = result + res
+                    ## dummy solution case
+                    # self.test_x: torch.Tensor = self.test_x.to(dtype=dtype, device=device)
+                    # res = lora_B(lora_A(dropout(self.test_x))) * scaling
+                    # res = res.view(896, -1)
+                    # res = res[:, 0].squeeze()
+                    # result = result + res
+
+                    ## 1st solution case
+                    base_layer_weight_size = (self.base_layer.out_features, self.base_layer.in_features)
+                    S = self.base_layer.diff_mask.S
+                    self.base_layer.diff_mask.update_scheduler_args()
+                    k = self.base_layer.diff_mask.current_k
+                    tau = self.base_layer.diff_mask.current_temperature
+                    hard = self.base_layer.diff_mask.hard
+
+                    base_masks = self.base_layer.diff_mask(lora_flag=True)  ## (weight_size.numel()//4, 4)
+                    lora_masks = lora_B(lora_A(dropout(S))) * scaling  ## (weight_size.numel()//4, 4)
+                    ## it is important to convert lora_masks to the same dtype and device as base_masks
+                    lora_masks = lora_masks.to(dtype=base_masks.dtype, device=base_masks.device) 
+                    masks = base_masks + lora_masks  ## (weight_size.numel()//4, 4)
+                    masks = masks.view(base_layer_weight_size)  ## (weight_size[0], weight_size[1])
+                    k_times_masks = masks * k  ## (weight_size[0], weight_size[1])
+                    noisy_masks = F.gumbel_softmax(
+                        k_times_masks, tau=tau, hard=hard
+                    )  ## (weight_size[0], weight_size[1])
+                    result = self.base_layer(input=x, pre_computed_masks=noisy_masks, *args, **kwargs)
+
                 else:
                     raise NotImplementedError(f"{self.__class__.__name__} does not support dora yet, set it to False")
 
-            result = result.to(torch_result_dtype)
+            # result = result.to(torch_result_dtype)
 
         return result
 
