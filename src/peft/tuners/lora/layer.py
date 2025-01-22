@@ -724,7 +724,7 @@ class Linear(nn.Module, LoraLayer):
                         base_layer=self.get_base_layer(),
                         base_result=base_result,
                     )
-
+            print("under forward of lora linear")
             result = result.to(torch_result_dtype)
 
         return result
