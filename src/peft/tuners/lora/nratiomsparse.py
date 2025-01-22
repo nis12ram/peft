@@ -238,7 +238,7 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
                     del base_masks,lora_masks, masks, k_times_masks, noisy_masks
                 else:
                     raise NotImplementedError(f"{self.__class__.__name__} does not support dora yet, set it to False")
-
+            print("under forward of nratiomsparse")
             # result = result.to(torch_result_dtype)
 
         return result
