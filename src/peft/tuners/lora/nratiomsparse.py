@@ -216,7 +216,7 @@ class NratioMSparseLoraLinear(nn.Module, LoraLayer):
                     # result = result + res
 
                     ## 1st solution case
-                    print("lora_A.weight.dtype: ", lora_A.weight.dtype)
+                    # print("lora_A.weight.dtype: ", lora_A.weight.dtype)
                     base_layer_weight_size = (self.base_layer.out_features, self.base_layer.in_features)
                     S = self.base_layer.diff_mask.S.clone().to(dtype=lora_A.weight.dtype, device=lora_A.weight.device)
                     self.base_layer.diff_mask.update_scheduler_args()
